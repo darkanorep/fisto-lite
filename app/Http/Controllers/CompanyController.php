@@ -39,6 +39,7 @@ class CompanyController extends Controller
     public function update(Request $request, Company $company)
     {
         return response('update to');
+        //sheesh
     }
 
 }
