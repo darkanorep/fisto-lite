@@ -6,16 +6,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Category extends Model
+class Department extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $hidden = [
-        'created_at',
-        'pivot'
+    protected  $fillable = [
+        'code',
+        'department',
+        'company_id'
     ];
 
-    protected $fillable = [
-        'name'
+    protected $hidden = [
+        'created_at',
     ];
+
+    public function company() {
+        return $this->belongsTo(Company::class)->select(['id', 'code', 'company']);
+    }
 }

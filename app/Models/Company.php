@@ -18,4 +18,8 @@ class Company extends Model
         'code',
         'company'
     ];
+
+    public function associates() {
+        return $this->belongsToMany(User::class, 'company_user',  'company_id', 'user_id')->select(['users.id', 'users.username', 'users.role'])->withTimestamps();
+    }
 }

@@ -30,13 +30,13 @@ class AuthController extends Controller
             return $query->get(['username', 'role']);
         });
 
-        return count($users) ? Response::success('User List.', $users) : Response::not_found();
+        return count($users) ? Response::fetch('User', $users) : Response::not_found();
     }
 
     public function register(AddUserRequest $request)
     {
 
-        return Response::created('New User Created.', new UserResource(User::create([
+        return Response::created('User', new UserResource(User::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'username' => $request->username,

@@ -41,9 +41,13 @@ class DocumentController extends Controller
         //     });
 
         $query = Document::withTrashed()
+        ->with('categories')
         ->where(function ($query) use ($search) {
             $query->where('type', 'like', "%$search%")
-                ->orWhere('description', 'like', "%$search%");
+                ->orWhere('description', 'like', "%$search%")
+                ->orWhereHas('categories', function ($query) use ($search) {
+                    $query->where('name', 'like', "%$search%");
+                });
         });
 
         if ($paginate) {
@@ -71,6 +75,7 @@ class DocumentController extends Controller
             'description' => $request->description,
         ]);
 
+        $document->categories()->attach($request->categories);
         $document = Document::find($document->id);
 
         return Response::created('Document', $document);
@@ -83,7 +88,11 @@ class DocumentController extends Controller
     {
         $document = Document::find($id);
 
-        return $document ? Response::single_fetch('Document', $document) : Response::not_found();
+        if ($document) {
+            return Response::single_fetch('Document', Document::with('categories')->find($id));
+        }
+
+        return Response::not_found();
     }
 
     /**
@@ -98,6 +107,7 @@ class DocumentController extends Controller
                 'type' => $request->type,
                 'description' => $request->description,
             ]);
+            $document->categories()->sync($request->categories);
             $document->save();
 
             return Response::updated('Document', $document);

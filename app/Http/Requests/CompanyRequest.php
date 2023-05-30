@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Category;
+use App\Models\User;
 use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class DocumentRequest extends FormRequest
+class CompanyRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,30 +23,23 @@ class DocumentRequest extends FormRequest
      */
     public function rules(): array
     {
-        
         return [
-            'type' => ['required','string', Rule::unique('documents', 'type')->ignore($this->document)],
-            'description' => 'required|string',
-            'categories' => [
-                'required', 
+            'code' => ['required', 'string', Rule::unique('companies', 'code')->ignore($this->company)],
+            'company' => ['required', 'string'],
+            'associates' => [
+                'required',
                 'array',
                 function ($attribute, $value, $fail) {
                     $inputIds = collect($value);
-                    $existingIds = Category::whereIn('id', $inputIds)->pluck('id');
+                    $existingIds = User::whereIn('id', $inputIds)->pluck('id');
 
                     $nonExistingIds = $inputIds->diff($existingIds);
 
                     if (count($nonExistingIds)) {
-                        $fail("The selected categories with ID {$nonExistingIds->implode(', ')} does not exist.");
+                        $fail("The selected associates with ID {$nonExistingIds->implode(', ')} does not exist.");
                     }
-                }]
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'type.unique' => 'Document type already exists.'
+                }
+            ]
         ];
     }
 }
