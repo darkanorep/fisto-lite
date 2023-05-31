@@ -11,9 +11,10 @@ use App\Http\Controllers\FormController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\RequestorController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\OrganizationalDepartmentController;
 
 /*
@@ -66,6 +67,10 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         //Department
         Route::resource('department', DepartmentController::class);
         Route::patch('department/change-status/{id}', [DepartmentController::class, 'change_status']);
+        Route::post('department/import', [DepartmentController::class, 'import']);
+
+        //Location
+        Route::resource('location', LocationController::class);
     });
 
     //Requestor

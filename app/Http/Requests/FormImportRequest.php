@@ -34,7 +34,7 @@ class FormImportRequest extends FormRequest
             '*.form_type.exists' => 'ID :input is not registered.',
             '*.name.unique' => ':input is already registered.',
             '*.name.required' => 'Name is required.',
-            '*.form_type.required' => 'Form Type is requireds.',
+            '*.form_type.required' => 'Form Type is required.',
         ];
     
     }

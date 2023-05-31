@@ -13,14 +13,15 @@ class Department extends Model
     protected  $fillable = [
         'code',
         'department',
-        'company_id'
+        'company_id',
     ];
 
     protected $hidden = [
         'created_at',
+        'pivot'
     ];
 
     public function company() {
-        return $this->belongsTo(Company::class)->select(['id', 'code', 'company']);
+        return $this->belongsTo(Company::class)->select('id', 'company as name');
     }
 }
