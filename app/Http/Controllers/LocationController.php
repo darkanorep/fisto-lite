@@ -12,9 +12,37 @@ class LocationController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Location::with('departments')->get();
+        $status = $request->input('status', true);
+        $paginate = $request->input('paginate', true);
+        $rows = $request->input('rows', 10);
+        $search = $request->input('search', '');
+
+        $query = Location::withTrashed()
+            ->with('departments')
+            ->where(function ($query) use ($search) {
+                $query->where('code', 'like', "%$search%")
+                    ->orWhere('location', 'like', "%$search%")
+                    ->orWhereHas('departments', function ($query) use ($search) {
+                        $query->where('code', 'like', "%$search%")
+                        ->orWhere('department', 'like', "%$search%");
+                    });
+            });
+
+        if ($paginate) {
+            $query->when($status, function ($query) {
+                $query->whereNull('deleted_at');
+            }, function ($query) {
+                $query->whereNotNull('deleted_at');
+            });
+
+            $location = $query->latest('updated_at')->paginate($rows);
+        } else {
+            $location = $query->get(['id', 'code', 'location']);
+        }
+
+        return count($location) ?  Response::fetch('Location', $location) : Response::not_found();
     }
 
 
@@ -38,7 +66,14 @@ class LocationController extends Controller
      */
     public function show($id)
     {
-        //
+        $location = Location::find($id);
+
+        if ($location) {
+
+            return Response::single_fetch('Location', Location::with('departments')->find($id));
+        }
+
+        return Response::not_found();
     }
 
 
@@ -65,7 +100,7 @@ class LocationController extends Controller
     }
 
     public function change_status($id) {
-        return GenericController::change_status(Location::class, $id);
+        return GenericController::change_status('Location', Location::class, $id);
     }
 
 }

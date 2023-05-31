@@ -17,7 +17,7 @@ use App\Http\Response\Status;
         public static function updated($model, $data) {
             return response()->json([
                 'code' => Status::OK,
-                'message' => $model.' successfully updated.',
+                'message' => ucfirst($model).' successfully updated.',
                 'result' => $data
             ]);
         }
@@ -25,7 +25,7 @@ use App\Http\Response\Status;
         public static function fetch($model, $data) {
             return response()->json([
                 'code' => Status::OK,
-                'message' => Str::plural($model).' successfully fetched.',
+                'message' => ucfirst(Str::plural($model)).' successfully fetched.',
                 'result' => $data
             ]);
         }
@@ -33,7 +33,7 @@ use App\Http\Response\Status;
         public static function single_fetch($model, $data) {
             return response()->json([
                 'code' => Status::OK,
-                'message' => Str::singular($model).' successfully fetched.',
+                'message' => ucfirst(Str::singular($model)).' successfully fetched.',
                 'result' => $data
             ]);
         }
@@ -73,5 +73,21 @@ use App\Http\Response\Status;
                 'message' => $message,
                 'result' => $data
             ], Status::CONFLICT);
+        }
+
+        public static function archived($model, $data) {
+            return response()->json([
+                'code' => Status::OK,
+                'message' => ucfirst(Str::singular($model)).' successfully archived.',
+                'result' => $data
+            ],  Status::OK);
+        }
+        
+        public static function restored($model, $data) {
+            return response()->json([
+                'code' => Status::OK,
+                'message' => ucfirst(Str::singular($model)).' successfully restored.',
+                'result' => $data
+            ],  Status::OK);
         }
     }

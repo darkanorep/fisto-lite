@@ -122,6 +122,6 @@ class DocumentController extends Controller
      */
     public function change_status($id)
     {
-        return GenericController::change_status(Document::class, $id);
+        return GenericController::change_status('Document', Document::class, $id);
     }
 }

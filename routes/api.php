@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\Form;
-use App\Models\Document;
 use Spatie\Backtrace\Frame;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +14,9 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\RequestorController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\OrganizationalDepartmentController;
+use App\Http\Controllers\ReferenceController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UrgencyTypesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,18 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
         //Location
         Route::resource('location', LocationController::class);
+        Route::patch('location/change-status/{id}', [LocationController::class, 'change_status']);
+
+        //Reference
+        Route::resource('reference', ReferenceController::class);
+        Route::patch('reference/change-status/{id}', [ReferenceController::class, 'change_status']);
+
+        //Urgency Type
+        Route::resource('urgency-type', UrgencyTypesController::class);
+        Route::patch('urgency-type/change-status/{id}', [UrgencyTypesController::class, 'change_status']);
+
+        //Supplier
+        Route::resource('supplier', SupplierController::class);
     });
 
     //Requestor

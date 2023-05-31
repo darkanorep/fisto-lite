@@ -90,7 +90,7 @@ class CategoryController extends Controller
      */
     public function change_status($id)
     {
-        return GenericController::change_status(Category::class, $id);
+        return GenericController::change_status('Category', Category::class, $id);
     }
 
 }

@@ -67,7 +67,7 @@ class FormController extends Controller
      */
     public function change_status($id)
     {
-        return GenericController::change_status(Document::class, $id);
+        return GenericController::change_status('Form' ,Document::class, $id);
     }
 
 

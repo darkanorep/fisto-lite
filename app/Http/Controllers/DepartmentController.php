@@ -100,7 +100,7 @@ class DepartmentController extends Controller
 
     public function change_status($id)
     {
-        return GenericController::change_status(Department::class, $id);
+        return GenericController::change_status('Department', Department::class, $id);
     }
 
     public function import(DepartmentRequest $request)

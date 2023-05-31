@@ -102,6 +102,6 @@ class CompanyController extends Controller
 
     public function change_status($id)
     {
-        return GenericController::change_status(Company::class, $id);
+        return GenericController::change_status('Company', Company::class, $id);
     }
 }

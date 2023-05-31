@@ -7,7 +7,7 @@ use App\Http\Response\Response;
 
 class GenericController extends Controller
 {
-    public static function change_status($model, $id)
+    public static function change_status($object, $model, $id)
     {
         $data = $model::withTrashed()->find($id);
 
@@ -15,11 +15,11 @@ class GenericController extends Controller
             if ($data->trashed()) {
                 $data->restore();
 
-                return Response::success('Document successfully restored', $data);
+                return Response::restored($object, $data);
             } else {
                 $data->delete();
                 
-                return Response::success('Document successfully archived', $data);
+                return Response::archived($object, $data);
             }
 
         } else {
