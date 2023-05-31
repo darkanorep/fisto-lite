@@ -36,7 +36,7 @@ class LocationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Location $location)
+    public function show($id)
     {
         //
     }
