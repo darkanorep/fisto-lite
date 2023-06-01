@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\POBatches;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Http\Response\Response;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\TransactionResource;
 
 class GenericController extends Controller
 {
@@ -25,6 +29,58 @@ class GenericController extends Controller
         } else {
 
             return Response::not_found();
+        }
+    }
+
+    public static function storeTransaction($request, $document_id) {
+
+        $context = $request->all();
+
+        switch($document_id) {
+
+            //PAD
+            case $document_id == 1:
+
+                $po_group = count($request->po_group);
+                $po_total_amount = 0;
+
+                for ($i = 0; $i < $po_group; $i++) {
+                    $po_total_amount += $request->po_group[$i]['po_amount'];
+                }
+
+                if (!(((abs($request->document_amount - $po_total_amount)) >= 0.00) && ((abs($request->document_amount - $po_total_amount)) < 1.00))) {
+                    return Response::conflict('PO Amount does not match with Document Amount.', ["document_amount" => $request->document_amount, "po_total_amount" => $po_total_amount, "variance" => $request->document_amount - $po_total_amount]);
+                }
+
+                $transaction = Transaction::create([
+                    'user_id' => Auth::user()->id,
+                    'document_id' => $context['document_id'],
+                    'category_id' => $context['category_id'],
+                    'document_no' => $context['document_no'],
+                    'request_date' => now(),
+                    'document_amount' => $context['document_amount'],
+                    'document_date' => $context['document_date'],
+                    'company_id' => $context['company_id'],
+                    'location_id' => $context['location_id'],
+                    'supplier_id' => $context['supplier_id'],
+                    'remarks' => $context['remarks'],
+                    'po_group' => $context['po_group']
+                ]);
+
+                for ($i = 0; $i < $po_group; $i++) {
+                    POBatches::create([
+                        'transaction_id' => $transaction->id,
+                        'po_number' => $request->po_group[$i]['po_number'],
+                        'po_amount' => $request->po_group[$i]['po_amount'],
+                        'po_total_amount' => $po_total_amount,
+                        'rr_number' => $request->po_group[$i]['rr_number'],
+                    ]);
+                }
+
+                $transaction = Transaction::find($transaction->id);
+
+                return Response::created('Transaction', new TransactionResource($transaction));
+                break;
         }
     }
 }

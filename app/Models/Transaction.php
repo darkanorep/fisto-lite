@@ -2,35 +2,55 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
+use App\Models\Company;
+use App\Models\Category;
+use App\Models\Document;
+use App\Models\Location;
+use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Transaction extends Model
 {
-    use HasFactory;
-
-    protected $hidden = [
-        'created_at',
-        'requestor_id'
-    ];
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'form_id',
-        'is_ap_approved',
-        'status',
-        'requestor_id',
-        'tag_no'
+        'user_id',
+        'document_id',
+        'category_id',
+        'document_no',
+        'request_date',
+        'document_date',
+        'document_amount',
+        'company_id',
+        'location_id',
+        'supplier_id',
+        'remarks'
     ];
 
-    public function voucher() {
-        return $this->hasOne(Voucher::class);
+    public function users() {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function form() {
-        return $this->belongsTo(Form::class);
+    public function documents() {
+        return $this->belongsTo(Document::class,  'document_id');
     }
 
-    public function requestor() {
-        return $this->belongsTo(User::class);
+    public function categories() {
+        return $this->belongsTo(Category::class,  'category_id');
+    }
+
+    public function companies() {
+        return $this->belongsTo(Company::class,   'company_id');
+    }
+
+    public function locations() {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
+
+    public function suppliers() {
+        return $this->belongsTo(Supplier::class,  'supplier_id');
     }
 }

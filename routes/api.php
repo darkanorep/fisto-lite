@@ -16,6 +16,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\OrganizationalDepartmentController;
 use App\Http\Controllers\ReferenceController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UrgencyTypesController;
 
 /*
@@ -43,11 +44,6 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         //User
         Route::post('register', [AuthController::class, 'register']);
         Route::get('users', [AuthController::class, 'index']);
-
-        //Form
-        Route::resource('form', FormController::class);
-        Route::patch('form/change-status/{id}', [FormController::class, 'change_status']);
-        Route::post('form/import', [FormController::class, 'import']);
 
         //Organizational Department
         Route::resource('organizational-department', OrganizationalDepartmentController::class);
@@ -84,15 +80,16 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
         //Supplier
         Route::resource('supplier', SupplierController::class);
+        Route::patch('supplier/change-status/{id}', [SupplierController::class, 'change_status']);
     });
-
-    //Requestor
-    Route::resource('make-request', RequestorController::class);
 
     //AP
     Route::put('ap-received', [APController::class, 'received']);
     Route::put('tag-issuance/{id}', [APController::class, 'issuing_tag_no']);
     Route::post('voucher-creation', [APController::class, 'voucher_creation']);
+
+    //Create Transaction
+    Route::resource('transaction', TransactionController::class);
 
     //Finance
     Route::put('finance-approval', [FinanceController::class, 'voucher_approve']);

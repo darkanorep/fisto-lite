@@ -13,11 +13,23 @@ class SupplierController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $suppliers = Supplier::get();
+        // $suppliers = Supplier::get();
 
-        return Response::fetch('Supplier', SupplierResource::collection($suppliers));
+        // return Response::fetch('Supplier', SupplierResource::collection($suppliers));
+
+        $status = $request->input('status', true);
+        $paginate = $request->input('paginate', true);
+        $rows = $request->input('rows', 10);
+        $search = $request->input('search', '');
+
+        $query = Supplier::withTrashed()
+        ->where(function ($query) use ($search) {
+            $query->where('code', 'LIKE', "%$search%")
+            ->orWhere('name', 'LIKE', "%$search%")
+            ->orWhere('terms', 'LIKE', "%$search%");
+        });
     }
 
 
@@ -78,5 +90,9 @@ class SupplierController extends Controller
         }
 
         return Response::not_found();
+    }
+
+    public function change_status($id) {
+        return GenericController::change_status('supplier', Supplier::class, $id);
     }
 }
