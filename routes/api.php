@@ -4,6 +4,7 @@ use Spatie\Backtrace\Frame;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\APController;
+use App\Http\Controllers\APTaggingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\CompanyController;
@@ -84,9 +85,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     });
 
     //AP
-    Route::put('ap-received', [APController::class, 'received']);
-    Route::put('tag-issuance/{id}', [APController::class, 'issuing_tag_no']);
-    Route::post('voucher-creation', [APController::class, 'voucher_creation']);
+    Route::post('receive/{id}', [APTaggingController::class, 'received']);
+    Route::post('return/{id}', [APTaggingController::class, 'returned']);
 
     //Create Transaction
     Route::resource('transaction', TransactionController::class);

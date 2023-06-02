@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Validation\Rule;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 
 class TransactionRequest extends FormRequest
@@ -25,14 +27,22 @@ class TransactionRequest extends FormRequest
             'document_id' => 'required|string|exists:documents,id',
             'category_id' => 'required|string|exists:categories,id',
             'document_no' => 'required|string|unique:transactions,document_no',
+            'document_no' => ['required', 'string', Rule::unique('transactions', 'document_no')->ignore($this->transaction)],
             'document_date' => 'required|date|before:today',
             'document_amount' => 'required|numeric',
             'company_id' => 'required|string|exists:companies,id',
             'location_id' => 'required|string|exists:locations,id',
             'supplier_id' => 'required|string|exists:suppliers,id',
             'remarks' => 'nullable|string',
-            'po_group' => 'required|array',
-            'po_group.*.po_number' => 'required',
+            'po_group' => 'required',
+            'po_group.*.po_number' => [
+                'required',
+                // Rule::unique('p_o_batches', 'po_number')->where(function ($query) {
+                //     return $query->where('transaction_id', $this->po_number);
+                // }),
+                Rule::unique('p_o_batches', 'po_number')->ignore($this->route('p_o_batch')),
+                'distinct'
+            ],
             'po_group.*.po_amount' => 'required',
             'po_group.*.rr_no' => 'nullable',
         ];
@@ -42,6 +52,7 @@ class TransactionRequest extends FormRequest
     {
         return [
             'document_id.exists' => 'Document not found.',
+            'po_group.*.po_number.distinct' => 'PO Number already in list.'
         ];
     }
 }

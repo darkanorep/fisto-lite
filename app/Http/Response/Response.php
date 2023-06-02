@@ -67,6 +67,13 @@ use App\Http\Response\Status;
             ],  Status::NOT_FOUND);
         }
 
+        public static function transaction_not_found() {
+            return response()->json([
+                'code' => Status::NOT_FOUND,
+                'message' => 'No transaction found.'
+            ],  Status::NOT_FOUND);
+        }
+
         public static function conflict($message, $data) {
             return response()->json([
                 'code' => Status::CONFLICT,

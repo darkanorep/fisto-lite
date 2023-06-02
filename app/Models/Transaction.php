@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Document;
 use App\Models\Location;
 use App\Models\Supplier;
+use App\Models\POBatches;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -52,5 +53,9 @@ class Transaction extends Model
 
     public function suppliers() {
         return $this->belongsTo(Supplier::class,  'supplier_id');
+    }
+
+    public function poBatches() {
+        return $this->hasMany(POBatches::class, 'transaction_id');
     }
 }
