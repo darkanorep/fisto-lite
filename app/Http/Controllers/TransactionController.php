@@ -81,7 +81,7 @@ class TransactionController extends Controller
                 'po_group' => $context['po_group']
             ]);
 
-            $pad->poBatches()->delete();
+            $pad->poBatches()->where('transaction_id', $pad->id)->delete();
 
             for ($i = 0; $i < $po_group; $i++) {
                 $pad->poBatches()->create([

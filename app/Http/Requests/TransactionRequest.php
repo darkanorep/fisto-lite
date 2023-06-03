@@ -37,10 +37,10 @@ class TransactionRequest extends FormRequest
             'po_group' => 'required',
             'po_group.*.po_number' => [
                 'required',
-                // Rule::unique('p_o_batches', 'po_number')->where(function ($query) {
-                //     return $query->where('transaction_id', $this->po_number);
-                // }),
-                Rule::unique('p_o_batches', 'po_number')->ignore($this->route('p_o_batch')),
+                Rule::unique('p_o_batches', 'po_number')->where(function ($query) {
+                    $query->where('po_number', $this->input('po_group.*.po_number'))
+                    ->where('transaction_id', '!=', $this->transaction);;
+                }),
                 'distinct'
             ],
             'po_group.*.po_amount' => 'required',
