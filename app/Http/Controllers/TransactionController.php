@@ -48,9 +48,9 @@ class TransactionController extends Controller
      */
     public function update(TransactionRequest $request, $id)
     {
-        $pad = Transaction::with('poBatches')->find($id);
+        $pad = Transaction::find($id);
 
-        if ($pad) {
+        if ($pad->status === 'Pending' || $pad->status === 'Returned') {
 
             $context = $request->all();
 
@@ -78,8 +78,9 @@ class TransactionController extends Controller
                 'location_id' => $context['location_id'],
                 'supplier_id' => $context['supplier_id'],
                 'remarks' => $context['remarks'],
-                'po_group' => $context['po_group']
+                'po_group' => $context['po_group'],
             ]);
+
 
             $pad->poBatches()->where('transaction_id', $pad->id)->delete();
 
@@ -93,6 +94,9 @@ class TransactionController extends Controller
             }
 
             $transaction = Transaction::find($pad->id);
+            $transaction->status = 'Pending';
+            $transaction->state = 'Pending';
+            $transaction->save();
 
             return Response::updated('Transaction', new TransactionResource($transaction));
 
@@ -100,6 +104,7 @@ class TransactionController extends Controller
 
         return Response::transaction_not_found();
     }
+
 
     /**
      * Remove the specified resource from storage.

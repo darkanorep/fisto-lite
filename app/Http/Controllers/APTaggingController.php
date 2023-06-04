@@ -53,22 +53,30 @@ class APTaggingController extends Controller
         }
     }
 
-    public function returned(Request $request, $id) {
+    // public function returned(Request $request, $id)
+    // {
+    //     $transaction = Transaction::find($id);
+
+    //     if ($transaction->is_received === 1) {
+    //         $transaction->is_received = 0;
+    //         $transaction->status = 'Returned';
+    //         $transaction->state = 'Returned';
+    //         $transaction->remarks = $request->remarks;
+
+    //         $transaction->save();
+
+    //         return Response::updated('Transaction', new TransactionResource($transaction));
+    //     }
+    // }
+
+    public function updateTransaction(Request $request, $id) {
+
+        $transaction = Transaction::find($id);
         
-        $transaction = Transaction::find($id); 
-
-        if ($transaction->is_received === 1) {
-
-            $transaction->update([
-                $transaction->is_received = 1,
-                $transaction->status = 'Returned',
-                $transaction->state = 'Returned',
-                $transaction->remarks = $request->remarks
-            ]);
-
-            return Response::updated('Transaction', new TransactionResource($transaction));
-        }
+        return GenericController::updateTransaction($transaction, $request, $id);
+        
     }
+
 
     /**
      * Remove the specified resource from storage.

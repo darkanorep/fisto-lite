@@ -87,6 +87,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     //AP
     Route::post('receive/{id}', [APTaggingController::class, 'received']);
     Route::post('return/{id}', [APTaggingController::class, 'returned']);
+    Route::put('update-transaction/{id}', [APTaggingController::class, 'updateTransaction']);
 
     //Create Transaction
     Route::resource('transaction', TransactionController::class);

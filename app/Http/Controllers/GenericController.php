@@ -22,23 +22,23 @@ class GenericController extends Controller
                 return Response::restored($object, $data);
             } else {
                 $data->delete();
-                
+
                 return Response::archived($object, $data);
             }
-
         } else {
 
             return Response::not_found();
         }
     }
 
-    public static function storeTransaction($request, $document_id) {
+    public static function storeTransaction($request, $document_id)
+    {
 
         $context = $request->all();
 
-        switch($document_id) {
+        switch ($document_id) {
 
-            //PAD
+                //PAD
             case $document_id == 1:
 
                 $po_group = count($request->po_group);
@@ -82,5 +82,52 @@ class GenericController extends Controller
                 return Response::created('Transaction', new TransactionResource($transaction));
                 break;
         }
+    }
+
+    public static function updateTransaction($model, $request, $id)
+    {
+
+        $transaction = $model::find($id);
+        $status = ucfirst($request->status);
+
+        if ($transaction) {
+
+            if ($status === 'Tag') {
+
+                $transaction->status = $status;
+                $transaction->state = $status;
+                $transaction->remarks = $request->remarks;
+                
+                $transaction->save();
+
+            } elseif ($status === 'Hold') {
+
+                $transaction->status = $status;
+                $transaction->state = $status;
+                $transaction->remarks = $request->remarks;
+
+                $transaction->save();
+
+            } elseif ($status === 'Void') {
+
+                $transaction->status = $status;
+                $transaction->state = $status;
+                $transaction->remarks = $request->remarks;
+
+                $transaction->save();
+                
+            } elseif ($status === 'Returned') {
+                $transaction->is_received = 0;
+                $transaction->status = 'Returned';
+                $transaction->state = 'Returned';
+                $transaction->remarks = $request->remarks;
+
+                $transaction->save();
+            }
+
+            return Response::updated('Transaction', new TransactionResource($transaction));
+        }
+
+        return Response::transaction_not_found();
     }
 }
