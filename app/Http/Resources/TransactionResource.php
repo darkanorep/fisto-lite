@@ -52,7 +52,14 @@ class TransactionResource extends JsonResource
             'remarks' => $this->remarks,
             'status' => $this->status,
             'state' => $this->state,
-            'is_received' => $this->is_received
+            'is_received' => $this->is_received,
+            'po_batches' => $this->poBatches->map(function ($po_batches) {
+                return [
+                    'po_number' => $po_batches->po_number,
+                    'po_amount' => $po_batches->po_amount,
+                    'rr_number' => $po_batches->rr_number,
+                ];
+            })
         ];
     }
 }

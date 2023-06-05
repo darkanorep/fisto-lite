@@ -81,6 +81,29 @@ class GenericController extends Controller
 
                 return Response::created('Transaction', new TransactionResource($transaction));
                 break;
+            
+        
+            //PRM Common
+            case $document_id == 2:
+
+                $transaction = Transaction::create([
+                    'user_id' => Auth::user()->id,
+                    'document_id' => $context['document_id'],
+                    'category_id' => $context['category_id'],
+                    'document_no' => $context['document_no'],
+                    'request_date' => now(),
+                    'document_amount' => $context['document_amount'],
+                    'document_date' => $context['document_date'],
+                    'company_id' => $context['company_id'],
+                    'location_id' => $context['location_id'],
+                    'supplier_id' => $context['supplier_id'],
+                    'remarks' => $context['remarks']
+                ]);
+
+                $transaction = Transaction::find($transaction->id);
+
+                return Response::created('Transaction', new TransactionResource($transaction));
+                break;
         }
     }
 
