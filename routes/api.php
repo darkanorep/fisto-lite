@@ -89,8 +89,9 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::post('return/{id}', [APTaggingController::class, 'returned']);
     Route::put('update-transaction/{id}', [APTaggingController::class, 'updateTransaction']);
 
-    //Create Transaction
+    //Transaction
     Route::resource('transaction', TransactionController::class);
+    Route::patch('transaction-void/{id}', [TransactionController::class, 'void']);
 
     //Finance
     Route::put('finance-approval', [FinanceController::class, 'voucher_approve']);

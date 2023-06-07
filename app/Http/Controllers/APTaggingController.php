@@ -41,40 +41,29 @@ class APTaggingController extends Controller
     {
         $transaction = Transaction::find($id);
 
-        if ($transaction->is_received === 0) {
+        if ($transaction) {
 
-            $transaction->update([
-                $transaction->is_received = 1,
-                $transaction->status = 'Received',
-                $transaction->state = 'Received'
-            ]);
+            if ($transaction->state === 'Pending') {
 
-            return Response::updated('Transaction', new TransactionResource($transaction));
+                $transaction->update([
+                    $transaction->is_received = 1,
+                    $transaction->status = 'Received',
+                    $transaction->state = 'Received'
+                ]);
+
+                return Response::updated('Transaction', new TransactionResource($transaction));
+            }
         }
+
+        return Response::transaction_not_found();
     }
 
-    // public function returned(Request $request, $id)
-    // {
-    //     $transaction = Transaction::find($id);
+    public function updateTransaction(Request $request, $id)
+    {
 
-    //     if ($transaction->is_received === 1) {
-    //         $transaction->is_received = 0;
-    //         $transaction->status = 'Returned';
-    //         $transaction->state = 'Returned';
-    //         $transaction->remarks = $request->remarks;
+        $transaction = new Transaction();
 
-    //         $transaction->save();
-
-    //         return Response::updated('Transaction', new TransactionResource($transaction));
-    //     }
-    // }
-
-    public function updateTransaction(Request $request, $id) {
-
-        $transaction = Transaction::find($id);
-        
         return GenericController::updateTransaction($transaction, $request, $id);
-        
     }
 
 

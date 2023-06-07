@@ -25,10 +25,7 @@ class TransactionController extends Controller
         $date_from = $request->input('date_from', date('Y-m-d'));
         $date_to = $request->input('date_to', date('Y-m-d'));
 
-        $transaction = Transaction::when($status, function ($query, $status) {
-            return $query->where('status', $status);
-        })
-            ->with('users')
+        $transaction = Transaction::with('users')
             ->with('documents')
             ->with('categories')
             ->with('companies')
@@ -57,6 +54,10 @@ class TransactionController extends Controller
                         $query->where('po_number', 'like', "%$search%");
                     });
             })
+            ->orWhere(function ($query) use ($search) {
+                $query->where('document_no', 'like', "%$search%")
+                    ->orWhere('tag_no', 'like', "%$search%");
+            })
             ->where('user_id', Auth::user()->id)
             ->whereBetween('request_date', [$date_from, $date_to]);
 
@@ -76,6 +77,7 @@ class TransactionController extends Controller
         if ($user->role == 'Requestor') {
 
             return GenericController::storeTransaction($request, $request->document_id);
+            
         }
 
         return Response::unauthorized('You are not authorized to perform this action.');
@@ -99,10 +101,10 @@ class TransactionController extends Controller
         if ($transaction->status === 'Pending' || $transaction->status === 'Returned') {
             $context = $request->all();
 
-            //PAD
+
             switch ($request->document_id) {
 
-                case $request->document_id == 1:
+                case $request->document_id == 1: //PAD
                     $po_group = count($context['po_group']);
                     $po_total_amount = 0;
 
@@ -146,9 +148,9 @@ class TransactionController extends Controller
                     return Response::updated('Transaction', $updatedTransaction);
                     break;
 
-                
-                //PRM Common
-                case $request->document_id == 2:
+
+
+                case $request->document_id == 2: //PRM Common
 
                     $transaction->user_id = Auth::user()->id;
                     $transaction->document_id = $context['document_id'];
@@ -170,6 +172,51 @@ class TransactionController extends Controller
 
                     return Response::updated('Transaction', $updatedTransaction);
                     break;
+
+                case $request->document_id == 5: //Contractor's Billing
+
+                    $po_group = count($context['po_group']);
+                    $po_total_amount = 0;
+
+                    for ($i = 0; $i < $po_group; $i++) {
+                        $po_total_amount += $context['po_group'][$i]['po_amount'];
+                    }
+
+                    if (!(((abs($request->document_amount - $po_total_amount)) >= 0.00) && ((abs($request->document_amount - $po_total_amount)) < 1.00))) {
+                        return Response::conflict('PO Amount does not match with Document Amount.', ["document_amount" => $request->document_amount, "po_total_amount" => $po_total_amount, "variance" => $request->document_amount - $po_total_amount]);
+                    }
+
+                    $transaction->user_id = Auth::user()->id;
+                    $transaction->document_id = $context['document_id'];
+                    $transaction->category_id = $context['category_id'];
+                    $transaction->request_date = now();
+                    $transaction->document_amount = $context['document_amount'];
+                    $transaction->document_date = $context['document_date'];
+                    $transaction->company_id = $context['company_id'];
+                    $transaction->location_id = $context['location_id'];
+                    $transaction->supplier_id = $context['supplier_id'];
+                    $transaction->capex = $context['capex'];
+                    $transaction->remarks = $context['remarks'];
+                    $transaction->save();
+
+                    $transaction->poBatches()->where('transaction_id', $transaction->id)->delete();
+
+                    for ($i = 0; $i < $po_group; $i++) {
+                        $transaction->poBatches()->create([
+                            'po_number' => $request->po_group[$i]['po_number'],
+                            'po_amount' => $request->po_group[$i]['po_amount'],
+                            'po_total_amount' => $po_total_amount,
+                            'rr_number' => $request->po_group[$i]['rr_number'],
+                        ]);
+                    }
+
+                    $updatedTransaction = Transaction::find($transaction->id);
+                    $updatedTransaction->status = 'Pending';
+                    $updatedTransaction->state = 'Pending';
+                    $updatedTransaction->save();
+
+                    return Response::updated('Transaction', new TransactionResource($updatedTransaction));
+                    break;
             }
         }
 
@@ -178,11 +225,23 @@ class TransactionController extends Controller
 
 
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Transaction $transaction)
+    public function void(Request $request, $id)
     {
-        //
+
+        $transaction = Transaction::whereIn('status', ['Pending', 'Returned'])
+            ->where('user_id', Auth::user()->id)
+            ->find($id);
+
+        if ($transaction) {
+
+            $transaction->status = 'Void';
+            $transaction->state = 'Requestor-Void';
+            $transaction->remarks = $request->remarks;
+            $transaction->save();
+
+            return Response::updated('Transaction', $transaction);
+        }
+
+        return Response::not_found();
     }
 }

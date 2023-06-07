@@ -9,6 +9,7 @@ use App\Models\Document;
 use App\Models\Location;
 use App\Models\Supplier;
 use App\Models\POBatches;
+use App\Models\Department;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,7 +33,11 @@ class Transaction extends Model
         'company_id',
         'location_id',
         'supplier_id',
-        'remarks'
+        'remarks',
+        'capex',
+        'from_date',
+        'to_date',
+        'department_id'
     ];
 
     public function users() {
@@ -45,6 +50,10 @@ class Transaction extends Model
 
     public function categories() {
         return $this->belongsTo(Category::class,  'category_id');
+    }
+
+    public function departments() {
+        return $this->belongsTo(Department::class,  'department_id');
     }
 
     public function companies() {
