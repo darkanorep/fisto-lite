@@ -37,7 +37,8 @@ class Transaction extends Model
         'capex',
         'from_date',
         'to_date',
-        'department_id'
+        'department_id',
+        'voucher_date'
     ];
 
     public function users() {

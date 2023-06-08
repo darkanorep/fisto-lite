@@ -97,7 +97,10 @@ class TransactionResource extends JsonResource
                     'date' => [
                         'from' => $this->from_date,
                         'to' => $this->to_date
-                    ]
+                    ],
+                    'status' => $this->status,
+                    'state' => $this->state,
+                    'tag_no' => $this->tag_no,
                 ];
                 break;
         }

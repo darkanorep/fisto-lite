@@ -43,15 +43,33 @@ class APTaggingController extends Controller
 
         if ($transaction) {
 
-            if ($transaction->state === 'Pending') {
+            if (Auth::user()->role == 'AP') {
 
-                $transaction->update([
-                    $transaction->is_received = 1,
-                    $transaction->status = 'Received',
-                    $transaction->state = 'Received'
-                ]);
+                if ($transaction->state === 'Pending') {
 
-                return Response::updated('Transaction', new TransactionResource($transaction));
+                    $transaction->update([
+                        $transaction->is_received = 1,
+                        $transaction->status = 'Received',
+                        $transaction->state = Auth::user()->role . '-Received'
+                    ]);
+    
+                    return Response::updated('Transaction', new TransactionResource($transaction));
+                }
+
+            } elseif (Auth::user()->role == 'AP Associate') {
+
+                if ($transaction->is_ap_tag_approved == 1) {
+
+                    $transaction->update([
+                        $transaction->is_received = 1,
+                        $transaction->status = 'Received',
+                        $transaction->state = Auth::user()->role . '-Received'
+                    ]);
+    
+                    return Response::updated('Transaction', new TransactionResource($transaction));
+
+                }
+
             }
         }
 

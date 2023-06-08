@@ -75,8 +75,8 @@ class TransactionRequest extends FormRequest
 
             'capex' => ['required_if:document_id,5', 'string', Rule::unique('transactions', 'capex')->ignore($this->transaction)],
 
-            'from_date' => ['required_if:document_id,7'],
-            'to_date' => ['required_if:document_id,7'],
+            'from_date' => ['required_if:document_id,7', Rule::unique('transactions', 'from_date')->ignore($this->transaction)],
+            'to_date' => ['required_if:document_id,7', Rule::unique('transactions', 'to_date')->ignore($this->transaction)],
         ];
     }
 

@@ -19,7 +19,7 @@ use App\Http\Response\Status;
                 'code' => Status::OK,
                 'message' => ucfirst($model).' successfully updated.',
                 'result' => $data
-            ]);
+            ], Status::OK);
         }
 
         public static function fetch($model, $data) {
@@ -35,7 +35,7 @@ use App\Http\Response\Status;
                 'code' => Status::OK,
                 'message' => ucfirst(Str::singular($model)).' successfully fetched.',
                 'result' => $data
-            ]);
+            ], Status::OK);
         }
 
         public static function created($model, $data) {
@@ -96,5 +96,13 @@ use App\Http\Response\Status;
                 'message' => ucfirst(Str::singular($model)).' successfully restored.',
                 'result' => $data
             ],  Status::OK);
+        }
+        
+        public static function transaction_received($model, $data) {
+            return response()->json([
+                'code' => Status::OK,
+                'message' => ucfirst($model).' received.',
+                'result' => $data
+            ], Status::OK);
         }
     }

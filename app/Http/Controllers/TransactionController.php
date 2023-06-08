@@ -105,6 +105,7 @@ class TransactionController extends Controller
             switch ($request->document_id) {
 
                 case $request->document_id == 1: //PAD
+
                     $po_group = count($context['po_group']);
                     $po_total_amount = 0;
 
@@ -216,6 +217,22 @@ class TransactionController extends Controller
                     $updatedTransaction->save();
 
                     return Response::updated('Transaction', new TransactionResource($updatedTransaction));
+                    break;
+                
+                case $request->document_id == 7: //Payroll
+
+                    $transaction->user_id = Auth::user()->id;
+                    $transaction->document_id = $context['document_id'];
+                    $transaction->from_date = $context['from_date'];
+                    $transaction->to_date = $context['to_date'];
+                    $transaction->document_amount = $context['document_amount'];
+                    $transaction->company_id = $context['company_id'];
+                    $transaction->department_id = $context['department_id'];
+                    $transaction->location_id = $context['location_id'];
+                    $transaction->supplier_id = $context['supplier_id'];
+                    $transaction->remarks = $context['remarks'];
+
+                    return Response::updated('Transaction', new TransactionResource($transaction));
                     break;
             }
         }

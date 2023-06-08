@@ -32,6 +32,7 @@ class GenericController extends Controller
             return Response::not_found();
         }
     }
+    
 
     public static function storeTransaction($request, $document_id)
     {
@@ -166,7 +167,7 @@ class GenericController extends Controller
                     'remarks' => $context['remarks'],
                 ]);
 
-                return Response::created('Transaction', $transaction);
+                return Response::created('Transaction', new TransactionResource($transaction));
                 break;
         }
     }
@@ -179,40 +180,125 @@ class GenericController extends Controller
 
         if ($transaction) {
 
-            switch ($status) {
+            if (Auth::user()->role === 'AP') {
 
-                case 'Return':
+                switch ($status) {
 
-                    $transaction->status = 'Returned';
-                    $transaction->state = 'Returned';
-                    $transaction->is_received = 0;
-                    $transaction->remarks = $request->remarks;
-                    $transaction->save();
+                    case 'Return':
+    
+                        if ($model->whereIn('status', ['Returned'])->find($id)) {
+                            $transaction->state = Auth::user()->role . '-Returned';
+                            $transaction->save();
+                            
+                            return Response::conflict('Transaction is already ' . $status, new TransactionResource($transaction));
+                        }
+    
+                        $modelInstance = $model->where(function ($query) {
+                            $query->where('is_received', 0)
+                                ->orWhere('is_ap_tag_approved', 1);
+                        })->find($id);
+                        
+                        if ($modelInstance) {
+                            return Response::transaction_not_found();
+                        }
+                        
+                        $transaction->status = 'Returned';
+                        $transaction->state = Auth::user()->role . '-Returned';
+                        $transaction->is_received = 0;
+                        $transaction->is_ap_tag_received = 0;
+                        $transaction->is_ap_tag_approved = 0;
+                        $transaction->remarks = $request->remarks;
+                        $transaction->save();
+    
+                        return Response::transaction_received('Transaction', new TransactionResource($transaction));
+    
+                        break;
+    
+                    case 'Hold':
+    
+                        if ($model->whereIn('status', ['Hold'])->find($id)) {
+                            return Response::conflict('Transaction is already ' . $status, new TransactionResource($transaction));
+                        }
+    
+                        $transaction->status = 'Hold';
+                        $transaction->state = Auth::user()->role . '-Hold';
+                        $transaction->remarks = $request->remarks;
+                        $transaction->save();
+    
+                        break;
+    
+                    case 'Tag':
+    
+                        if ($model->whereIn('status', ['Tagged'])->find($id)) {
+                            return Response::conflict('Transaction is already Tagged', new TransactionResource($transaction));
+                        }
+    
+                        if ($model->whereIn('status', ['Returned', 'Pending'])->find($id)) {
+                            return Response::transaction_not_found();
+                        }
+    
+                        $transaction->tag_no
+                            ? $tagNo = $transaction->tag_no
+                            : $tagNo = rand(1000, 9999);
+    
+                        $transaction->status = 'Tagged';
+                        $transaction->state = Auth::user()->role . '-Tagged';
+                        $transaction->tag_no = $tagNo;
+                        $transaction->is_received = 1;
+                        $transaction->is_ap_tag_approved = 1;
+                        $transaction->remarks = $request->remarks;
+                        $transaction->save();
+    
+                        break;
+                }
 
-                    break;
+            } elseif (Auth::user()->role === 'AP Associate') {
+                
+                switch ($status) {
 
-                case 'Hold':
+                    case 'Return':
+    
+                        if ($model->whereIn('status', ['Returned'])->find($id)) {
+                            $transaction->state = Auth::user()->role . '-Returned';
+                            $transaction->save();
 
-                    $transaction->status = 'Hold';
-                    $transaction->state = 'Hold';
-                    $transaction->remarks = $request->remarks;
-                    $transaction->save();
+                            return Response::conflict('Transaction is already ' . $status, new TransactionResource($transaction));
+                        }
 
-                    break;
+                        $transaction->status = 'Returned';
+                        $transaction->state = Auth::user()->role . '-Returned';
+                        $transaction->is_received = 0;
+                        $transaction->is_ap_tag_approved = 0;
+                        $transaction->is_ap_assoc_approved = 0;
+                        $transaction->remarks = $request->remarks;
+                        $transaction->save();
+    
+                        return Response::transaction_received('Transaction', new TransactionResource($transaction));
+    
+                        break;
+                    
+                    case 'Voucher':
 
-                case 'Tag':
+                        if ($model->whereIn('status', ['Returned', 'Pending'])->find($id)) {
+                            return Response::transaction_not_found();
+                        }
 
-                    $transaction->tag_no
-                        ? $tagNo = $transaction->tag_no
-                        : $tagNo = rand(1000, 9999);
+                        $transaction->voucher_no
+                        ? $voucherNo = $transaction->voucher_no
+                        : $voucherNo = rand(1000, 9999);
 
-                    $transaction->status = 'Tagged';
-                    $transaction->state = 'Tagged';
-                    $transaction->tag_no = $tagNo;
-                    $transaction->remarks = $request->remarks;
-                    $transaction->save();
+                        $transaction->status = 'Vouchered';
+                        $transaction->state = Auth::user()->role . '-Vouchered';
+                        $transaction->voucher_no = $voucherNo;
+                        $transaction->is_received = 1;
+                        $transaction->is_ap_assoc_approved = 1;
+                        $transaction->voucher_date = $request->voucher_date;
+                        $transaction->remarks = $request->remarks;
+                        $transaction->save();
 
-                    break;
+
+                        break;
+                }
             }
 
             return Response::updated('Transaction', new TransactionResource($transaction));
