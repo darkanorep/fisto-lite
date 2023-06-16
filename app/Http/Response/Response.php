@@ -105,4 +105,12 @@ use App\Http\Response\Status;
                 'result' => $data
             ], Status::OK);
         }
+
+        public static function returned($model, $data) {
+            return response()->json([
+                'code' => Status::OK,
+                'message' => ucfirst($model).' returned.',
+                'result' => $data
+            ], Status::OK);
+        }
     }

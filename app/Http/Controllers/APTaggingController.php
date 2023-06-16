@@ -45,30 +45,49 @@ class APTaggingController extends Controller
 
             if (Auth::user()->role == 'AP') {
 
-                if ($transaction->state === 'Pending') {
+                if ($transaction->state == 'AP-Returned' || $transaction->status == 'Pending') {
 
                     $transaction->update([
-                        $transaction->is_received = 1,
+                        $transaction->status()->update(['is_received' => 1]),
                         $transaction->status = 'Received',
-                        $transaction->state = Auth::user()->role . '-Received'
+                        $transaction->state = Auth::user()->role . '-Received',
+                        $transaction->phase = Auth::user()->role
                     ]);
     
-                    return Response::updated('Transaction', new TransactionResource($transaction));
+                    return Response::transaction_received('Transaction', new TransactionResource($transaction));
                 }
 
             } elseif (Auth::user()->role == 'AP Associate') {
 
-                if ($transaction->is_ap_tag_approved == 1) {
+                // $validation = $transaction->whereHas('status', function ($query) {
+                //     $query->where('is_ap_tag_approved', 1);
+                // })->where('state', 'AP-Tagged')->first();
 
-                    $transaction->update([
-                        $transaction->is_received = 1,
-                        $transaction->status = 'Received',
-                        $transaction->state = Auth::user()->role . '-Received'
-                    ]);
+                // if (!$validation) {
+                //     return Response::transaction_not_found();
+                // }
+
+                // if ($validation) {
+
+                //     $transaction->update([
+                //         $transaction->status()->update(['is_received' => 1]),
+                //         $transaction->status = 'Received',
+                //         $transaction->state = Auth::user()->role . '-Received',
+                //         $transaction->phase = Auth::user()->role
+                //     ]);
     
-                    return Response::updated('Transaction', new TransactionResource($transaction));
+                //     return Response::transaction_received('Transaction', new TransactionResource($transaction));
 
-                }
+                // }
+
+                $transaction->update([
+                    $transaction->status()->update(['is_received' => 1]),
+                    $transaction->status = 'Received',
+                    $transaction->state = Auth::user()->role . '-Received',
+                    $transaction->phase = Auth::user()->role
+                ]);
+
+                return Response::transaction_received('Transaction', new TransactionResource($transaction));
 
             }
         }
@@ -79,9 +98,7 @@ class APTaggingController extends Controller
     public function updateTransaction(Request $request, $id)
     {
 
-        $transaction = new Transaction();
-
-        return GenericController::updateTransaction($transaction, $request, $id);
+        return GenericController::updateTransaction($request, $id);
     }
 
 

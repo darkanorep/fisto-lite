@@ -10,6 +10,7 @@ use App\Http\Response\Response;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\TransactionRequest;
 use App\Http\Resources\TransactionResource;
+use App\Models\Status;
 
 class GenericController extends Controller
 {
@@ -32,7 +33,6 @@ class GenericController extends Controller
             return Response::not_found();
         }
     }
-    
 
     public static function storeTransaction($request, $document_id)
     {
@@ -67,7 +67,12 @@ class GenericController extends Controller
                     'location_id' => $context['location_id'],
                     'supplier_id' => $context['supplier_id'],
                     'remarks' => $context['remarks'],
-                    'po_group' => $context['po_group']
+                    'po_group' => $context['po_group'],
+                    'phase' => Auth::user()->role
+                ]);
+
+                Status::create([
+                    'transaction_id' => $transaction->id,
                 ]);
 
                 for ($i = 0; $i < $po_group; $i++) {
@@ -100,7 +105,12 @@ class GenericController extends Controller
                     'company_id' => $context['company_id'],
                     'location_id' => $context['location_id'],
                     'supplier_id' => $context['supplier_id'],
-                    'remarks' => $context['remarks']
+                    'remarks' => $context['remarks'],
+                    'phase' => Auth::user()->role
+                ]);
+
+                Status::create([
+                    'transaction_id' => $transaction->id,
                 ]);
 
                 $transaction = Transaction::find($transaction->id);
@@ -135,6 +145,11 @@ class GenericController extends Controller
                     'po_group' => $context['po_group'],
                     'capex' => $context['capex'],
                     'remarks' => $context['remarks'],
+                    'phase' => Auth::user()->role
+                ]);
+
+                Status::create([
+                    'transaction_id' => $transaction->id,
                 ]);
 
                 for ($i = 0; $i < $po_group; $i++) {
@@ -165,6 +180,11 @@ class GenericController extends Controller
                     'location_id' => $context['location_id'],
                     'supplier_id' => $context['supplier_id'],
                     'remarks' => $context['remarks'],
+                    'phase' => Auth::user()->role
+                ]);
+
+                Status::create([
+                    'transaction_id' => $transaction->id,
                 ]);
 
                 return Response::created('Transaction', new TransactionResource($transaction));
@@ -172,10 +192,10 @@ class GenericController extends Controller
         }
     }
 
-    public static function updateTransaction($model, $request, $id)
+    public static function updateTransaction($request, $id)
     {
 
-        $transaction = $model->whereNotIn('status', ['Void'])->find($id);
+        $transaction = Transaction::find($id);
         $status = ucfirst($request->status);
 
         if ($transaction) {
@@ -185,120 +205,139 @@ class GenericController extends Controller
                 switch ($status) {
 
                     case 'Return':
-    
-                        if ($model->whereIn('status', ['Returned'])->find($id)) {
-                            $transaction->state = Auth::user()->role . '-Returned';
-                            $transaction->save();
-                            
-                            return Response::conflict('Transaction is already ' . $status, new TransactionResource($transaction));
-                        }
-    
-                        $modelInstance = $model->where(function ($query) {
-                            $query->where('is_received', 0)
-                                ->orWhere('is_ap_tag_approved', 1);
-                        })->find($id);
-                        
-                        if ($modelInstance) {
-                            return Response::transaction_not_found();
-                        }
-                        
+
+                        // $validation = $transaction->whereHas('status', function ($query) {
+                        //     $query->where('status.is_received', 0);
+                        // })->find($id);
+
+                        // if ($validation) {
+                        //     return Response::transaction_not_found();
+                        // }
+
                         $transaction->status = 'Returned';
                         $transaction->state = Auth::user()->role . '-Returned';
-                        $transaction->is_received = 0;
-                        $transaction->is_ap_tag_received = 0;
-                        $transaction->is_ap_tag_approved = 0;
+                        $transaction->status()->update([
+                            'is_received' => 0,
+                            'is_ap_tag_approved' => 0,
+                            'is_returned' => 1
+                        ]);
                         $transaction->remarks = $request->remarks;
+                        $transaction->phase = Auth::user()->role;
                         $transaction->save();
-    
-                        return Response::transaction_received('Transaction', new TransactionResource($transaction));
-    
+
+                        return Response::returned('Transaction', new TransactionResource($transaction));
+
                         break;
-    
-                    case 'Hold':
-    
-                        if ($model->whereIn('status', ['Hold'])->find($id)) {
-                            return Response::conflict('Transaction is already ' . $status, new TransactionResource($transaction));
-                        }
-    
-                        $transaction->status = 'Hold';
-                        $transaction->state = Auth::user()->role . '-Hold';
-                        $transaction->remarks = $request->remarks;
-                        $transaction->save();
-    
-                        break;
-    
+
                     case 'Tag':
-    
-                        if ($model->whereIn('status', ['Tagged'])->find($id)) {
-                            return Response::conflict('Transaction is already Tagged', new TransactionResource($transaction));
-                        }
-    
-                        if ($model->whereIn('status', ['Returned', 'Pending'])->find($id)) {
-                            return Response::transaction_not_found();
-                        }
-    
+
+                        // $validation = $transaction->whereHas('status', function ($query) {
+                        //     $query->where('status.is_received', 0);
+                        // })->find($id);
+
+                        // if ($validation) {
+                        //     return Response::transaction_not_found();
+                        // }
+
                         $transaction->tag_no
                             ? $tagNo = $transaction->tag_no
                             : $tagNo = rand(1000, 9999);
-    
-                        $transaction->status = 'Tagged';
+
+                        $transaction->status = 'Pending';
                         $transaction->state = Auth::user()->role . '-Tagged';
                         $transaction->tag_no = $tagNo;
-                        $transaction->is_received = 1;
-                        $transaction->is_ap_tag_approved = 1;
+                        $transaction->status()->update([
+                            'is_received' => 0,
+                            'is_ap_tag_approved' => 1,
+                            'is_returned' => 0
+                        ]);
                         $transaction->remarks = $request->remarks;
+                        $transaction->phase = Auth::user()->role;
                         $transaction->save();
-    
+
                         break;
                 }
-
             } elseif (Auth::user()->role === 'AP Associate') {
-                
+
                 switch ($status) {
 
-                    case 'Return':
-    
-                        if ($model->whereIn('status', ['Returned'])->find($id)) {
-                            $transaction->state = Auth::user()->role . '-Returned';
-                            $transaction->save();
+                    case 'Voucher':
 
-                            return Response::conflict('Transaction is already ' . $status, new TransactionResource($transaction));
-                        }
+                        // $validation = $transaction->whereHas('status', function ($query) {
+                        //     $query->where('status.is_ap_tag_approved', 0)
+                        //     ->orWhere('is_received', 0)
+                        //     ->orWhere('state', 'AP Associate-Received');
+                        // })->find($id);
+
+                        // if (!$validation) {
+                        //     return Response::transaction_not_found();
+                        // }
+
+                        $transaction->status = 'Pending';
+                        $transaction->state = Auth::user()->role . '-Voucher';
+                        $transaction->voucher_no = $request->voucher_no;
+                        $transaction->status()->update([
+                            'is_received' => 0,
+                            'is_ap_assoc_approved' => 1,
+                            'is_returned' => 0
+                        ]);
+                        $transaction->phase = Auth::user()->role;
+                        $transaction->save();
+
+                        break;
+
+                    case 'Return':
+
+                        // $validation = $transaction->whereHas('status', function ($query) {
+                        //     $query->where('status.is_ap_tag_approved', 0)
+                        //     ->orWhere('is_received', 0);
+                        // })->find($id);
+
+                        // if ($validation) {
+                        //     return Response::transaction_not_found();
+                        // }
 
                         $transaction->status = 'Returned';
                         $transaction->state = Auth::user()->role . '-Returned';
-                        $transaction->is_received = 0;
-                        $transaction->is_ap_tag_approved = 0;
-                        $transaction->is_ap_assoc_approved = 0;
+                        $transaction->status()->update([
+                            'is_received' => 0,
+                            'is_ap_tag_approved' => 1,
+                            'is_ap_assoc_approved' => 0,
+                            'is_returned' => 1
+                        ]);
                         $transaction->remarks = $request->remarks;
-                        $transaction->save();
-    
-                        return Response::transaction_received('Transaction', new TransactionResource($transaction));
-    
-                        break;
-                    
-                    case 'Voucher':
-
-                        if ($model->whereIn('status', ['Returned', 'Pending'])->find($id)) {
-                            return Response::transaction_not_found();
-                        }
-
-                        $transaction->voucher_no
-                        ? $voucherNo = $transaction->voucher_no
-                        : $voucherNo = rand(1000, 9999);
-
-                        $transaction->status = 'Vouchered';
-                        $transaction->state = Auth::user()->role . '-Vouchered';
-                        $transaction->voucher_no = $voucherNo;
-                        $transaction->is_received = 1;
-                        $transaction->is_ap_assoc_approved = 1;
-                        $transaction->voucher_date = $request->voucher_date;
-                        $transaction->remarks = $request->remarks;
+                        $transaction->phase = Auth::user()->role;
                         $transaction->save();
 
-
+                        return Response::returned('Transaction', new TransactionResource($transaction));
                         break;
                 }
+            } elseif (Auth::user()->role == 'Finance Supervisor' || Auth::user()->role == 'Finance Manager' || Auth::user()->role == 'Finance Director') {
+
+                $authorizedApprover = null;
+
+                if ($transaction->document_amount <= 500000) {
+                    $authorizedApprover = 'Finance Supervisor';
+                } elseif ($transaction->document_amount <= 1000000000) {
+                    $authorizedApprover = 'Finance Manager';
+                } elseif ($transaction->document_amount < 1000000001) {
+                    $authorizedApprover = 'Finance Director';
+                }
+
+                if ($authorizedApprover) {
+                    
+                    $transaction->status = 'Approved';
+                    $transaction->state = $authorizedApprover . '-Approved';
+                    $transaction->phase = $authorizedApprover;
+                    $transaction->status()->update([
+                        'is_finance_approved' => 1,
+                    ]);
+                    $transaction->save();
+
+                    return Response::updated('Transaction', new TransactionResource($transaction));
+                }
+
+                return Response::unauthorized('Not authorized to approve this transaction, only ' . $authorizedApprover . ' can approve this transaction.');
             }
 
             return Response::updated('Transaction', new TransactionResource($transaction));

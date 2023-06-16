@@ -55,9 +55,8 @@ class TransactionResource extends JsonResource
                     'remarks' => $this->remarks,
                     'status' => $this->status,
                     'state' => $this->state,
-                    'is_received' => $this->is_received,
                     'capex' => $this->capex,
-                    'tag_no' => $this->tag_no,
+                    'tag_no' => number_format($this->tag_no),
                     'po_batches' => $this->poBatches->map(function ($po_batches) {
                         return [
                             'po_number' => $po_batches->po_number,
@@ -71,6 +70,12 @@ class TransactionResource extends JsonResource
             case $this->documents->id == 7:
                 return [
                     'id' => $this->id,
+                    'user' => [
+                        'id' => $this->users->id,
+                        'first_name' => $this->users->first_name,
+                        'last_name' => $this->users->last_name,
+                        'role' => $this->users->role,
+                    ],
                     'document' => [
                         'id' => $this->documents->id,
                         'type' => $this->documents->type,

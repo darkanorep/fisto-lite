@@ -38,7 +38,8 @@ class Transaction extends Model
         'from_date',
         'to_date',
         'department_id',
-        'voucher_date'
+        'voucher_date',
+        'phase'
     ];
 
     public function users() {
@@ -71,5 +72,9 @@ class Transaction extends Model
 
     public function poBatches() {
         return $this->hasMany(POBatches::class, 'transaction_id');
+    }
+
+    public function status() {
+        return $this->hasOne(Status::class, 'transaction_id');
     }
 }

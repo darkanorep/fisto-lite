@@ -18,20 +18,49 @@ class TransactionController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {
+    {   
         $status = $request->input('status', 'Pending');
         $search = $request->input('search', '');
         $rows = $request->input('rows', 10);
         $date_from = $request->input('date_from', date('Y-m-d'));
         $date_to = $request->input('date_to', date('Y-m-d'));
+        // $document_type = json_decode($request->input('document_type', []));
+        // $supplier = json_decode($request->input('supplier', []));
 
-        $transaction = Transaction::with('users')
-            ->with('documents')
-            ->with('categories')
-            ->with('companies')
-            ->with('locations')
-            ->with('suppliers')
-            ->with('poBatches')
+        $requestor = Auth::user()->role == 'Requestor';
+        $ap = Auth::user()->role == 'AP';
+        $apAssoc = Auth::user()->role == 'AP Associate';
+
+        $transaction = Transaction::
+            with('users')
+                ->with('documents')
+                ->with('categories')
+                ->with('companies')
+                ->with('locations')
+                ->with('suppliers')
+                ->with('poBatches')
+            // when($requestor, function ($query) use ($status) {
+            //     $query->whereIn('phase', ['Requestor', 'AP', 'AP Associate'])
+            //     ->when($status, function ($query) use ($status) {
+            //         $query->where('status', $status);
+            //     });
+            // })
+            // ->when($ap, function ($query) use ($status) {
+            //     $query->orWhere(function ($query) use ($status) {
+            //         $query->whereIn('phase', ['AP', 'AP Associate'])
+            //             ->when($status, function ($query) use ($status) {
+            //                 $query->where('status', $status);
+            //             });
+            //     });
+            // })
+            // ->when($apAssoc, function ($query) use ($status) {
+            //     $query->orWhere(function ($query) use ($status) {
+            //         $query->whereIn('phase', ['AP Associate', 'Finance Supervisor', 'Finance Manager', 'Finance Director'])
+            //             ->when($status, function ($query) use ($status) {
+            //                 $query->where('status', $status);
+            //             });
+            //     });
+            // })
             ->where(function ($query) use ($search) {
                 $query->orWhereHas('users', function ($query) use ($search) {
                     $query->where('first_name', 'like', "%$search%");
@@ -58,12 +87,12 @@ class TransactionController extends Controller
                 $query->where('document_no', 'like', "%$search%")
                     ->orWhere('tag_no', 'like', "%$search%");
             })
-            ->where('user_id', Auth::user()->id)
+            // ->where('user_id', Auth::user()->id)
             ->whereBetween('request_date', [$date_from, $date_to]);
 
         $transactions = $transaction->latest('updated_at')->paginate($rows);
 
-        return count($transactions) ? Response::fetch('Transaction', TransactionResource::collection($transactions)) : Response::not_found();
+        return count($transactions) ? Response::fetch('Transaction', TransactionResource::collection($transactions)) : Response::transaction_not_found();
     }
 
 
@@ -77,7 +106,6 @@ class TransactionController extends Controller
         if ($user->role == 'Requestor') {
 
             return GenericController::storeTransaction($request, $request->document_id);
-            
         }
 
         return Response::unauthorized('You are not authorized to perform this action.');
@@ -105,6 +133,12 @@ class TransactionController extends Controller
             switch ($request->document_id) {
 
                 case $request->document_id == 1: //PAD
+
+                    $validation = $transaction->where('state', 'AP-Returned')->first();
+
+                    if (!$validation) {
+                        return Response::transaction_not_found();
+                    }
 
                     $po_group = count($context['po_group']);
                     $po_total_amount = 0;
@@ -218,7 +252,7 @@ class TransactionController extends Controller
 
                     return Response::updated('Transaction', new TransactionResource($updatedTransaction));
                     break;
-                
+
                 case $request->document_id == 7: //Payroll
 
                     $transaction->user_id = Auth::user()->id;
